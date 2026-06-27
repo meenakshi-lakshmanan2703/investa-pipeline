@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investa — KI Angebotspipeline</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a}
+nav{background:#1a1a2e;color:#fff;padding:1rem 2rem;display:flex;align-items:center;gap:12px}
+nav h1{font-size:18px;font-weight:600}
+nav .pill{font-size:11px;background:#16213e;padding:3px 10px;border-radius:20px;color:#a0aec0}
+.container{max-width:1100px;margin:0 auto;padding:2rem}
+.upload-zone{background:#fff;border:2px dashed #cbd5e0;border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:1.5rem}
+.upload-zone:hover{border-color:#4a5568;background:#f7fafc}
+.upload-zone h2{font-size:15px;color:#4a5568;margin-bottom:6px}
+.upload-zone p{font-size:13px;color:#a0aec0}
+.btn{background:#1a1a2e;color:#fff;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;margin-top:1rem}
+.btn:hover{background:#2d2d4e}
+.btn-sm{padding:6px 14px;font-size:12px;margin-top:0}
+.btn:disabled{background:#a0aec0;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#fff;border-radius:10px;padding:1.25rem;border:1px solid #e2e8f0}
+.stat .lbl{font-size:12px;color:#718096;margin-bottom:4px}
+.stat .val{font-size:26px;font-weight:600}
+.status-msg{padding:.75rem 1rem;border-radius:8px;font-size:13px;margin-bottom:1rem;display:none}
+.ok{background:#f0fff4;color:#276749;border:1px solid #9ae6b4}
+.err{background:#fff5f5;color:#742a2a;border:1px solid #fed7d7}
+.info{background:#ebf8ff;color:#2b6cb0;border:1px solid #bee3f8}
+.chart-box{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;margin-bottom:1.5rem;display:none}
+.chart-box h3{font-size:13px;font-weight:600;color:#4a5568;margin-bottom:1rem}
+.offers{display:flex;flex-direction:column;gap:1rem}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:1.5rem;border-left:4px solid #e2e8f0}
+.card.green{border-left-color:#38a169}
+.card.yellow{border-left-color:#d69e2e}
+.card.red-c{border-left-color:#e53e3e}
+.card.dup{border-left-color:#e53e3e;background:#fff5f5}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+.card-title{font-size:14px;font-weight:600;max-width:75%}
+.card-sub{font-size:12px;color:#718096;margin-top:3px}
+.score-circle{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.sc-green{background:#f0fff4;color:#276749}
+.sc-yellow{background:#fffff0;color:#744210}
+.sc-red{background:#fff5f5;color:#742a2a}
+.sc-dup{background:#fed7d7;color:#742a2a;font-size:10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem}
+.tag{font-size:11px;padding:2px 10px;border-radius:20px;background:#edf2f7;color:#4a5568}
+.tag.blue{background:#ebf8ff;color:#2b6cb0}
+.tag.green{background:#f0fff4;color:#276749}
+.tag.red{background:#fff5f5;color:#742a2a}
+.reasoning{font-size:13px;color:#4a5568;background:#f7fafc;border-radius:8px;padding:.75rem;line-height:1.6;border-left:3px solid #cbd5e0;margin-bottom:.75rem}
+.rejection{font-size:12px;color:#742a2a;background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:.75rem;white-space:pre-wrap;font-family:monospace}
+.drivers-row{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:.5rem}
+.drivers-col h4{font-size:11px;color:#718096;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.d-item{font-size:12px;color:#2d3748;padding:3px 0}
+.d-item::before{content:"↑ ";color:#38a169;font-weight:700}
+.r-item{font-size:12px;color:#2d3748;padding:3px 0}
+.r-item::before{content:"↓ ";color:#e53e3e;font-weight:700}
+.breakdown{margin-top:.75rem;background:#f7fafc;border-radius:8px;padding:.75rem;display:none}
+.br-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px}
+.prog{background:#e2e8f0;border-radius:4px;height:5px;margin-bottom:8px}
+.prog-bar{height:5px;border-radius:4px;background:#1a1a2e}
+.toggle-btn{font-size:11px;color:#718096;background:none;border:none;cursor:pointer;padding:4px 0;margin-top:4px}
+.spinner{display:none;width:28px;height:28px;border:3px solid #e2e8f0;border-top-color:#1a1a2e;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem;color:#a0aec0;font-size:14px}
+.section-hdr{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
+.section-hdr h2{font-size:16px;font-weight:600;color:#1a1a2e}
+</style>
+</head>
+<body>
+<nav>
+  <h1>Investa Real Estate</h1>
+  <span class="pill">KI-Angebotspipeline</span>
+  <span class="pill" style="margin-left:auto">localhost:8000</span>
+</nav>
+
+<div class="container">
+  <div class="upload-zone" onclick="document.getElementById('fi').click()">
+    <input type="file" id="fi" accept=".msg,.pdf,.txt" style="display:none" onchange="uploadFile(this.files[0])">
+    <div class="spinner" id="spinner"></div>
+    <h2 id="upload-title">Immobilienangebot hochladen</h2>
+    <p id="upload-sub">Drag & Drop oder klicken — .msg oder .pdf</p>
+    <button class="btn" onclick="event.stopPropagation();document.getElementById('fi').click()">Datei auswählen</button>
+  </div>
+
+  <div class="status-msg" id="status"></div>
+
+  <div class="stats" id="stats" style="display:none">
+    <div class="stat"><div class="lbl">Angebote gesamt</div><div class="val" id="s-total">0</div></div>
+    <div class="stat"><div class="lbl">Neue Objekte</div><div class="val" style="color:#276749" id="s-new">0</div></div>
+    <div class="stat"><div class="lbl">Duplikate</div><div class="val" style="color:#e53e3e" id="s-dup">0</div></div>
+    <div class="stat"><div class="lbl">Ø Score</div><div class="val" style="color:#744210" id="s-avg">—</div></div>
+  </div>
+
+  <div class="chart-box" id="chart-box">
+    <h3>Score-Übersicht</h3>
+    <div style="position:relative;height:180px"><canvas id="chart" role="img" aria-label="Score chart"></canvas></div>
+  </div>
+
+  <div class="section-hdr">
+    <h2 id="offers-title">Angebote</h2>
+    <button class="btn btn-sm" onclick="loadOffers()">Aktualisieren</button>
+  </div>
+  <div class="offers" id="offers"><div class="empty">Noch keine Angebote — laden Sie das erste .msg oder .pdf hoch</div></div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let chartInst = null;
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status-msg ' + type;
+  el.style.display = 'block';
+}
+
+function scoreClass(s) { return s >= 7 ? 'green' : s >= 5 ? 'yellow' : 'red-c'; }
+function scoreCircleClass(s) { return s >= 7 ? 'sc-green' : s >= 5 ? 'sc-yellow' : 'sc-red'; }
+
+function renderCard(o) {
+  const ext = o.extracted_data || {};
+  const addr = ext.address || {};
+  const isDup = o.is_duplicate === 1;
+  const bd = o.score_breakdown || {};
+  const drivers = bd.top_drivers || [];
+  const risks = bd.risks || [];
+  const rec = bd.recommendation || '';
+
+  const recColor = rec === 'invest' ? '#276749' : rec === 'review' ? '#744210' : '#742a2a';
+  const recBg = rec === 'invest' ? '#f0fff4' : rec === 'review' ? '#fffff0' : '#fff5f5';
+
+  const scoreHtml = isDup
+    ? `<div class="score-circle sc-dup">DUP</div>`
+    : `<div class="score-circle ${scoreCircleClass(o.score)}">${Number(o.score).toFixed(1)}</div>`;
+
+  const locationStr = [addr.street, addr.city, addr.postal_code].filter(Boolean).join(', ');
+  const dateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('de-DE') : '';
+
+  const tagClass = ext.asset_classification === 'land_development' ? 'blue' : 'green';
+  const tagLabel = ext.asset_classification === 'land_development' ? 'Baugrundstück' : 'Bestandsinvestment';
+
+  const recTag = rec ? `<span class="tag" style="background:${recBg};color:${recColor}">${rec.toUpperCase()}</span>` : '';
+  const priceTag = ext.purchase_price_eur ? `<span class="tag">€${(ext.purchase_price_eur/1e6).toFixed(2)}M</span>` : '';
+  const yieldTag = ext.target_yield_percent ? `<span class="tag green">${ext.target_yield_percent}% Rendite</span>` : '';
+  const unitsTag = ext.planned_units ? `<span class="tag">${ext.planned_units} WE</span>` : '';
+  const sizeTag = ext.plot_size_sqm ? `<span class="tag">${Number(ext.plot_size_sqm).toLocaleString('de-DE')} m²</span>` : '';
+
+  const driversHtml = drivers.length ? `
+    <div class="drivers-col">
+      <h4>Treiber</h4>
+      ${drivers.slice(0,3).map(d=>`<div class="d-item">${d}</div>`).join('')}
+    </div>` : '';
+
+  const risksHtml = risks.length ? `
+    <div class="drivers-col">
+      <h4>Risiken</h4>
+      ${risks.slice(0,2).map(r=>`<div class="r-item">${r}</div>`).join('')}
+    </div>` : '';
+
+  const breakdownEntries = Object.entries(bd)
+    .filter(([k,v]) => !['top_drivers','risks','recommendation'].includes(k) && typeof v === 'number')
+    .map(([k,v]) => `
+      <div class="br-row"><span style="color:#718096">${k.replace(/_/g,' ')}</span><span style="font-weight:600">${Number(v).toFixed(1)}/10</span></div>
+      <div class="prog"><div class="prog-bar" style="width:${Number(v)*10}%"></div></div>
+    `).join('');
+
+  return `
+<div class="card ${isDup ? 'dup' : scoreClass(o.score)}" id="card-${o.id}">
+  <div class="card-header">
+    <div>
+      <div class="card-title">${o.subject || 'Unbekanntes Angebot'}</div>
+      <div class="card-sub">${locationStr}${dateStr ? ' · ' + dateStr : ''}</div>
+    </div>
+    ${scoreHtml}
+  </div>
+  <div class="tags">
+    ${isDup ? '<span class="tag red">Duplikat erkannt</span>' : ''}
+    <span class="tag ${tagClass}">${tagLabel}</span>
+    ${addr.city ? `<span class="tag">${addr.city}</span>` : ''}
+    ${sizeTag}${unitsTag}${yieldTag}${priceTag}${recTag}
+  </div>
+  ${o.score_reasoning && !isDup ? `<div class="reasoning">${o.score_reasoning}</div>` : ''}
+  ${isDup && o.rejection_email ? `<div class="rejection">${o.rejection_email}</div>` : ''}
+  ${driversHtml || risksHtml ? `<div class="drivers-row">${driversHtml}${risksHtml}</div>` : ''}
+  ${breakdownEntries ? `
+    <button class="toggle-btn" onclick="toggleBreakdown(${o.id})">▼ Score-Details anzeigen</button>
+    <div class="breakdown" id="bd-${o.id}">${breakdownEntries}</div>
+  ` : ''}
+</div>`;
+}
+
+function toggleBreakdown(id) {
+  const el = document.getElementById('bd-' + id);
+  const btn = el.previousElementSibling;
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '▼ Score-Details anzeigen' : '▲ Score-Details verbergen';
+}
+
+function updateStats(offers) {
+  const total = offers.length;
+  const dups = offers.filter(o => o.is_duplicate === 1).length;
+  const scored = offers.filter(o => o.score != null && o.is_duplicate !== 1);
+  const avg = scored.length ? (scored.reduce((s,o) => s + o.score, 0) / scored.length).toFixed(1) : '—';
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-new').textContent = total - dups;
+  document.getElementById('s-dup').textContent = dups;
+  document.getElementById('s-avg').textContent = avg;
+  document.getElementById('stats').style.display = total > 0 ? 'grid' : 'none';
+  document.getElementById('offers-title').textContent = `Angebote (${total})`;
+}
+
+function updateChart(offers) {
+  const scored = offers.filter(o => o.score != null && o.is_duplicate !== 1);
+  if (!scored.length) { document.getElementById('chart-box').style.display = 'none'; return; }
+  document.getElementById('chart-box').style.display = 'block';
+  if (chartInst) chartInst.destroy();
+  const labels = scored.map(o => (o.subject || '').slice(0, 28) + '…');
+  const data = scored.map(o => Number(o.score.toFixed(1)));
+  const colors = data.map(s => s >= 7 ? '#38a169' : s >= 5 ? '#d69e2e' : '#e53e3e');
+  chartInst = new Chart(document.getElementById('chart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 6, label: 'Score' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 10, ticks: { font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+async function loadOffers() {
+  try {
+    const r = await fetch(`${API}/offers`);
+    const offers = await r.json();
+    updateStats(offers);
+    updateChart(offers);
+    const container = document.getElementById('offers');
+    if (!offers.length) {
+      container.innerHTML = '<div class="empty">Noch keine Angebote — laden Sie das erste .msg oder .pdf hoch</div>';
+      return;
+    }
+    container.innerHTML = offers.map(renderCard).join('');
+  } catch(e) {
+    showStatus('API nicht erreichbar — läuft uvicorn auf Port 8000?', 'err');
+  }
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  if (!['.msg','.pdf','.txt'].includes(ext)) {
+    showStatus('Format nicht unterstützt: ' + ext, 'err'); return;
+  }
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('upload-title').textContent = 'Analysiere…';
+  document.getElementById('upload-sub').textContent = 'Gemini extrahiert Daten, externe APIs werden abgefragt…';
+  showStatus(`Verarbeite "${file.name}" — bitte warten…`, 'info');
+
+  const form = new FormData();
+  form.append('file', file);
+  try {
+    const r = await fetch(`${API}/upload`, { method: 'POST', body: form });
+    const data = await r.json();
+    if (data.status === 'duplicate') {
+      showStatus(`Duplikat erkannt: "${data.matched}" — Ablehnungsschreiben generiert.`, 'err');
+    } else {
+      const rec = data.score_breakdown?.recommendation || '';
+      showStatus(`Analyse abgeschlossen — Score: ${Number(data.score).toFixed(1)}/10 · Empfehlung: ${rec}`, 'ok');
+    }
+    await loadOffers();
+  } catch(e) {
+    showStatus('Fehler beim Upload: ' + e.message, 'err');
+  }
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('upload-title').textContent = 'Immobilienangebot hochladen';
+  document.getElementById('upload-sub').textContent = 'Drag & Drop oder klicken — .msg oder .pdf';
+  document.getElementById('fi').value = '';
+}
+
+// Drag and drop
+const zone = document.querySelector('.upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#4a5568'; });
+zone.addEventListener('dragleave', () => { zone.style.borderColor = '#cbd5e0'; });
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.style.borderColor = '#cbd5e0';
+  uploadFile(e.dataTransfer.files[0]);
+});
+
+loadOffers();
+</script>
+</body>
+</html>

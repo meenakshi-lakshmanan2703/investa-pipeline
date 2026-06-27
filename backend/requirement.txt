@@ -1,0 +1,12 @@
+fastapi==0.111.0
+uvicorn==0.29.0
+python-multipart==0.0.9
+extract-msg==0.48.0
+pdfplumber==0.11.0
+pydantic>=2.10.0
+google-genai==0.8.0
+rapidfuzz==3.9.3
+requests==2.32.2
+python-dotenv>=1.0.1
+aiofiles==23.2.1
+pymupdf==1.24.0

@@ -1,11 +1,13 @@
 import os
 import json
+import re
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 from schema import RealEstateOffer
 from matcher import check_for_duplicate, generate_rejection_email
 from evaluator import evaluate_asset
+
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -79,11 +81,13 @@ RAW PROPERTY TEXT:
             else:
                 raise
             
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    text = text.strip()
+   
+    text = response.text.strip()
+    json_match = re.search(r"\{.*\}", text, re.DOTALL)
+    if json_match:
+        text = json_match.group(0)
+    else:
+        raise ValueError(f"No JSON found in LLM response: {text[:200]}")
 
     data = json.loads(text)
     return RealEstateOffer.model_validate(data)

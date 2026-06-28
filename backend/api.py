@@ -112,11 +112,12 @@ def _process_upload_sync(content: bytes, filename: str) -> dict:
 
     # Store drivers/risks inside score_breakdown for easy retrieval
     full_breakdown = {
-        **(eval_result.get("score_breakdown") or {}),
-        "top_drivers": eval_result.get("top_drivers", []),
-        "risks": eval_result.get("risks", []),
-        "recommendation": eval_result.get("recommendation", "review"),
-    }
+    **(eval_result.get("score_breakdown") or {}),
+    "top_drivers": eval_result.get("top_drivers", []),
+    "risks": eval_result.get("risks", []),
+    "recommendation": eval_result.get("recommendation", "review"),
+    "data_quality": eval_result.get("data_quality", "partial"),  # ADD THIS
+}
 
     save_offer(
         filename,

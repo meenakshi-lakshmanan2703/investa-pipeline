@@ -131,9 +131,13 @@ function renderCard(o) {
   const drivers = bd.top_drivers || [];
   const risks = bd.risks || [];
   const rec = bd.recommendation || '';
+  const dq = bd.data_quality || '';
 
   const recColor = rec === 'invest' ? '#276749' : rec === 'review' ? '#744210' : '#742a2a';
   const recBg = rec === 'invest' ? '#f0fff4' : rec === 'review' ? '#fffff0' : '#fff5f5';
+  const dqColor = dq === 'complete' ? '#276749' : dq === 'partial' ? '#744210' : '#742a2a';
+  const dqBg = dq === 'complete' ? '#f0fff4' : dq === 'partial' ? '#fffff0' : '#fff5f5';
+  const dqTag = dq ? `<span class="tag" style="background:${dqBg};color:${dqColor}">Data: ${dq}</span>` : '';
 
   const scoreHtml = isDup
     ? `<div class="score-circle sc-dup">DUP</div>`
@@ -164,7 +168,7 @@ function renderCard(o) {
     </div>` : '';
 
   const breakdownEntries = Object.entries(bd)
-    .filter(([k,v]) => !['top_drivers','risks','recommendation'].includes(k) && typeof v === 'number')
+    .filter(([k,v]) => !['top_drivers','risks','recommendation','data_quality'].includes(k) && typeof v === 'number')
     .map(([k,v]) => `
       <div class="br-row"><span style="color:#718096">${k.replace(/_/g,' ')}</span><span style="font-weight:600">${Number(v).toFixed(1)}/10</span></div>
       <div class="prog"><div class="prog-bar" style="width:${Number(v)*10}%"></div></div>
@@ -179,11 +183,11 @@ function renderCard(o) {
     </div>
     ${scoreHtml}
   </div>
-  <div class="tags">
+   <div class="tags">
     ${isDup ? '<span class="tag red">Duplikat erkannt</span>' : ''}
     <span class="tag ${tagClass}">${tagLabel}</span>
     ${addr.city ? `<span class="tag">${addr.city}</span>` : ''}
-    ${sizeTag}${unitsTag}${yieldTag}${priceTag}${recTag}
+    ${sizeTag}${unitsTag}${yieldTag}${priceTag}${recTag}${dqTag}
   </div>
   ${o.score_reasoning && !isDup ? `<div class="reasoning">${o.score_reasoning}</div>` : ''}
   ${isDup && o.rejection_email ? `<div class="rejection">${o.rejection_email}</div>` : ''}

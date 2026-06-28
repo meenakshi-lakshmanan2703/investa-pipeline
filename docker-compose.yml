@@ -9,13 +9,12 @@ services:
       - ./data:/app/data
     environment:
       - DB_PATH=/app/data/investa.db
-    
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s  
+      start_period: 15s
 
   frontend:
     image: nginx:alpine
@@ -25,4 +24,4 @@ services:
       - ./frontend:/usr/share/nginx/html:ro
     depends_on:
       backend:
-        condition: service_healthy  
+        condition: service_healthy

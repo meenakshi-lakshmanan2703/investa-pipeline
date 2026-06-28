@@ -174,24 +174,26 @@ Return a concise factual summary with numbers where available.
         return {"web_search_summary": f"Web search unavailable: {e}", "source": "fallback"}
 
 
-def enrich_property(address: str, city: str, asset_type: str = "unknown") -> Dict[str, Any]:
-    location = get_nominatim_location(address or "", city)
-    population = get_population_data(city)
-    rent = get_rent_data(city)
-    web_data = web_search_enrichment(city, asset_type)
+ENRICHMENT_DEFAULTS = {
+    "geocoding": {"lat": None, "lon": None, "display_name": None},
+    "population": {"population": None, "source": "unavailable"},
+    "rent_market": {"avg_rent_sqm": None, "rent_trend": None, "source": "unavailable"},
+    "live_market_research": {"web_search_summary": None, "source": "unavailable"},
+}
 
-    return {
-        "geocoding": location,
-        "population": population,
-        "rent_market": rent,
-        "live_market_research": web_data,
-        "macro_indicators": {
-            "city": city,
-            "data_sources": [
-                "OpenStreetMap Nominatim (geocoding)",
-                "Wikidata SPARQL (demographics)",
-                "Mietspiegel 2024 public data",
-                "Gemini Google Search grounding (live market data)",
-            ],
-        },
+def enrich_property(address: str, city: str, asset_type: str = "unknown") -> Dict[str, Any]:
+    result = {}
+    result["geocoding"] = get_nominatim_location(address or "", city) or ENRICHMENT_DEFAULTS["geocoding"]
+    result["population"] = get_population_data(city) or ENRICHMENT_DEFAULTS["population"]
+    result["rent_market"] = get_rent_data(city) or ENRICHMENT_DEFAULTS["rent_market"]
+    result["live_market_research"] = web_search_enrichment(city, asset_type) or ENRICHMENT_DEFAULTS["live_market_research"]
+    result["macro_indicators"] = {
+        "city": city,
+        "data_sources": [
+            "OpenStreetMap Nominatim (geocoding)",
+            "Wikidata SPARQL (demographics)",
+            "Mietspiegel 2024 public data",
+            "Gemini Google Search grounding (live market data)"
+        ]
     }
+    return result

@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import time
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -64,7 +65,6 @@ RAW PROPERTY TEXT:
 {raw_text}
 """
 
-    import time
     for attempt in range(3):
         try:
             response = client.models.generate_content(
@@ -73,7 +73,17 @@ RAW PROPERTY TEXT:
                 config=types.GenerateContentConfig(temperature=0.1)
             )
             text = response.text.strip()
-            break
+
+            # Belt-and-suspenders: strip markdown fences if Gemini adds them
+            json_match = re.search(r"\{.*\}", text, re.DOTALL)
+            if json_match:
+                text = json_match.group(0)
+            else:
+                raise ValueError(f"No JSON found in LLM response: {text[:200]}")
+
+            data = json.loads(text)
+            return RealEstateOffer.model_validate(data)
+        
         except Exception as e:
             if attempt < 2:
                 print(f"Gemini attempt {attempt+1} failed: {e} — retrying in 5s...")
@@ -82,17 +92,7 @@ RAW PROPERTY TEXT:
                 raise
             
    
-    text = response.text.strip()
-    json_match = re.search(r"\{.*\}", text, re.DOTALL)
-    if json_match:
-        text = json_match.group(0)
-    else:
-        raise ValueError(f"No JSON found in LLM response: {text[:200]}")
-
-    data = json.loads(text)
-    return RealEstateOffer.model_validate(data)
-
-
+    
 if __name__ == "__main__":
     import glob
 

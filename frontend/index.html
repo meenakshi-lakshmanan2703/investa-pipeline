@@ -107,6 +107,9 @@ nav .pill{font-size:11px;background:#16213e;padding:3px 10px;border-radius:20px;
 </div>
 
 <script>
+// API points directly to the FastAPI backend on the host machine.
+// This is intentional for local development — the browser calls the backend directly,
+// not through nginx. In production this would be an environment variable or reverse proxy.
 const API = 'http://127.0.0.1:8000';
 let chartInst = null;
 
@@ -266,8 +269,17 @@ async function uploadFile(file) {
 
   const form = new FormData();
   form.append('file', file);
+
+  // Show a reassurance message if processing takes longer than 30s.
+  // Gemini + external API enrichment typically takes 30-60s -- this prevents
+  // the user from thinking the upload has hung.
+  const slowTimer = setTimeout(() => {
+    showStatus('Analyse laeuft noch... Gemini und externe APIs koennen bis zu 60s dauern. Bitte warten.', 'info');
+  }, 30000);
+
   try {
     const r = await fetch(`${API}/upload`, { method: 'POST', body: form });
+    clearTimeout(slowTimer);
     const data = await r.json();
     if (data.status === 'duplicate') {
       showStatus(`Duplikat erkannt: "${data.matched}" — Ablehnungsschreiben generiert.`, 'err');

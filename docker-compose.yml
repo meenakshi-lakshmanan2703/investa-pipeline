@@ -1,5 +1,5 @@
 services:
-backend:
+  backend:
     build: ./backend
     restart: unless-stopped
     ports:

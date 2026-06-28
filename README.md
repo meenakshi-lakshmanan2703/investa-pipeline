@@ -100,7 +100,7 @@ investa-pipeline/
 │
 ├── data/                   # SQLite DB (mounted as Docker volume)
 ├── docker-compose.yml
-├── .env.example
+├── .env
 └── README.md
 ```
 
